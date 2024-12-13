@@ -26,7 +26,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
 
     # Добавляем задачу на отправку напоминания каждые 30 секунд
-    context.job_queue.run_repeating(
+    context.job = context.job_queue.run_repeating(
         send_location_request, interval=30, first=0, data=update.message.chat.id
     )
 
@@ -54,6 +54,18 @@ async def handle_location(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
 
 
+# Команда /stop для остановки бота
+async def stop(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    # Останавливаем задачу, если она была добавлена
+    if context.job:
+        context.job.schedule_removal()  # Останавливаем задачу
+        await update.message.reply_text("Напоминания остановлены.")
+
+    # Завершаем работу бота
+    await update.message.reply_text("Бот остановлен.")
+    context.application.stop()  # Останавливаем работу бота
+
+
 # Основная функция
 def main():
     # Создаем объект приложения
@@ -61,6 +73,7 @@ def main():
 
     # Добавляем обработчики команд
     application.add_handler(CommandHandler("start", start))
+    application.add_handler(CommandHandler("stop", stop))
     application.add_handler(MessageHandler(filters.LOCATION, handle_location))
 
     # Запускаем бота
